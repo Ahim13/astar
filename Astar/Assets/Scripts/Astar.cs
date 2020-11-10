@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -19,8 +20,21 @@ public class Astar : MonoBehaviour
 		// _tilemap.SetTile(new Vector3Int(0, 0, 0), _tilebase[0]);
 		// Unchecked a = _tilemap.GetTile<Unchecked>(new Vector3Int(0, 0, 0));
 
-		StartCoroutine(BreadthFirstSearch2());
-		
+		StartLocation = FindTile<Player>(_secondLayerTilemap);
+		GoalLocation = FindTile<Target>(_tilemap);
+
+		StartCoroutine(BreadthFirstSearch2WithEarlyExit());
+
+	}
+
+	private Vector3Int FindTile<T>(Tilemap tilemap)
+	{
+		foreach (var position in tilemap.cellBounds.allPositionsWithin)
+		{
+			if (tilemap.GetTile(position) is T)
+				return position;
+		}
+		return Vector3Int.zero;
 	}
 
 	private IEnumerator BreadthFirstSearch()
@@ -83,6 +97,45 @@ public class Astar : MonoBehaviour
 			yield return new WaitForSeconds(0.05f);
 		}
 		_tilemap.SetTile(curr, _tilebase[6]);
+	}
+	private IEnumerator BreadthFirstSearch2WithEarlyExit()
+	{
+		var frontier = new Queue<Vector3Int>();
+		frontier.Enqueue(StartLocation);
+		var cameFrom = new Dictionary<Vector3Int, Vector3Int?>();
+		cameFrom[StartLocation] = null;
+		var goal = GoalLocation;
+		List<Vector3Int> path = new List<Vector3Int>();
+		
+		while (frontier.Count > 0)
+		{
+			var current = frontier.Dequeue();
+			_tilemap.SetTile(current, _tilebase[1]);
+			if(current == goal)
+				break;
+			foreach (var next in GetNeighbours(current))
+			{
+				if (!cameFrom.ContainsKey(next))
+				{
+					frontier.Enqueue(next);
+					cameFrom[next] = current;
+					_tilemap.SetTile(next, _tilebase[3]);
+					CreateArrowPointingPrevious(next, cameFrom);
+				}
+			}
+
+			yield return new WaitForSeconds(0.02f);
+		}
+
+		
+		while (goal != StartLocation)
+		{
+			path.Add(goal);
+			_tilemap.SetTile(goal, _tilebase[6]);
+			goal = cameFrom[goal].Value;
+			yield return new WaitForSeconds(0.05f);
+		}
+		_tilemap.SetTile(goal, _tilebase[6]);
 	}
 
 	private void CreateArrowPointingPrevious(Vector3Int next, Dictionary<Vector3Int, Vector3Int?> cameFrom)
