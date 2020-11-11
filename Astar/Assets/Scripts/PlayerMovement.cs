@@ -15,7 +15,7 @@ public class PlayerMovement : MonoBehaviour
 	[SerializeField] private Animator _animator;
 
 	private IEnumerator _moveCoroutine;
-	
+
 	private static readonly int Horizontal = Animator.StringToHash("Horizontal");
 	private static readonly int Vertical = Animator.StringToHash("Vertical");
 	private static readonly int Speed = Animator.StringToHash("Speed");
@@ -76,7 +76,11 @@ public class PlayerMovement : MonoBehaviour
 				break;
 			foreach (var next in GetNeighbours(current, _tilemap))
 			{
-				var newCost = costSofar[current] + ((TileWithCost) _tilemap.GetTile(next)).Cost;
+				var newCost = costSofar[current];
+				if (_tilemap.GetTile(next) is TileWithCost)
+					newCost += ((TileWithCost) _tilemap.GetTile(next)).Cost;
+				else
+					newCost += 100;
 				if (!costSofar.ContainsKey(next) || newCost < costSofar[next])
 				{
 					costSofar[next] = newCost;
@@ -90,7 +94,7 @@ public class PlayerMovement : MonoBehaviour
 		while (goal != startLoc)
 		{
 			path.Push(goal);
-			if (cameFrom.ContainsKey(goal)) 
+			if (cameFrom.ContainsKey(goal))
 				goal = cameFrom[goal].Value;
 		}
 
