@@ -15,6 +15,10 @@ public class PlayerMovement : MonoBehaviour
 	[SerializeField] private Animator _animator;
 
 	private IEnumerator _moveCoroutine;
+	
+	private static readonly int Horizontal = Animator.StringToHash("Horizontal");
+	private static readonly int Vertical = Animator.StringToHash("Vertical");
+	private static readonly int Speed = Animator.StringToHash("Speed");
 
 	private void Update()
 	{
@@ -41,14 +45,14 @@ public class PlayerMovement : MonoBehaviour
 			{
 				_rb.position = Vector2.MoveTowards(_rb.position, newLoc, _movementSpeed * Time.deltaTime);
 				var direction = (newLoc - _rb.position).normalized;
-				_animator.SetFloat("Horizontal", direction.x);
-				_animator.SetFloat("Vertical", direction.y);
-				_animator.SetFloat("Speed", 1);
+				_animator.SetFloat(Horizontal, direction.x);
+				_animator.SetFloat(Vertical, direction.y);
+				_animator.SetFloat(Speed, 1);
 
 				yield return null;
 			}
 
-			_animator.SetFloat("Speed", 0);
+			_animator.SetFloat(Speed, 0);
 		}
 	}
 
@@ -59,8 +63,8 @@ public class PlayerMovement : MonoBehaviour
 		var costSofar = new Dictionary<Vector3Int, int>();
 		var path = new Stack<Vector3Int>();
 		var goal = target;
-
 		var startLoc = _tilemap.WorldToCell(_rb.position);
+
 		frontier.Enqueue(startLoc, 0);
 		cameFrom[startLoc] = null;
 		costSofar[startLoc] = 0;
@@ -86,7 +90,8 @@ public class PlayerMovement : MonoBehaviour
 		while (goal != startLoc)
 		{
 			path.Push(goal);
-			goal = cameFrom[goal].Value;
+			if (cameFrom.ContainsKey(goal)) 
+				goal = cameFrom[goal].Value;
 		}
 
 		return path;
